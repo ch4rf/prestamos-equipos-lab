@@ -73,6 +73,15 @@
       "fechaPrestamo": "2026-10-22",
       "fechaLimite": "2026-10-27",
       "devuelto": false
+    },
+    {
+      "id": 3,
+      "equipoId": 8,
+      "solicitante": "Sofía Castillo",
+      "carne": "0902-22-03489",
+      "fechaPrestamo": "2026-10-23",
+      "fechaLimite": "2026-10-28",
+      "devuelto": false
     }
   ]
 }

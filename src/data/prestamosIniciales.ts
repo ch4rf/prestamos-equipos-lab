@@ -1,7 +1,6 @@
 import type { Prestamo } from '../types/prestamo';
 
 // Préstamos iniciales para probar préstamos activos y filas vencidas
-// Una fecha límite en el pasado para mostrar el resaltado de "Vencido"
 const fechaAyer = new Date();
 fechaAyer.setDate(fechaAyer.getDate() - 1);
 
@@ -23,6 +22,15 @@ export const PRESTAMOS_INICIALES: Prestamo[] = [
     equipoId: 5, // Teclado Logitech MX Keys
     solicitante: 'Andrea Morales',
     carne: '0902-21-14520',
+    fechaPrestamo: new Date().toISOString().split('T')[0],
+    fechaLimite: fechaFutura.toISOString().split('T')[0], // VIGENTE
+    devuelto: false,
+  },
+  {
+    id: 3,
+    equipoId: 8, // Mouse Razer DeathAdder V2 Pro
+    solicitante: 'Sofía Castillo',
+    carne: '0902-22-03489',
     fechaPrestamo: new Date().toISOString().split('T')[0],
     fechaLimite: fechaFutura.toISOString().split('T')[0], // VIGENTE
     devuelto: false,
