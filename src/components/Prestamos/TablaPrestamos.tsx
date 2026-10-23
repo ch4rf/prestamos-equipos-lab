@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Prestamo } from '../../types/prestamo';
 import type { Equipo } from '../../types/equipo';
 
 export interface TablaPrestamosProps {
   prestamos: Prestamo[];
   equipos: Equipo[];
-  onDevolver: (prestamoId: number, equipoId: number) => void;
+  onDevolver: (prestamoId: number, equipoId: number) => Promise<void>;
 }
 
 export const TablaPrestamos: React.FC<TablaPrestamosProps> = ({
@@ -14,6 +14,7 @@ export const TablaPrestamos: React.FC<TablaPrestamosProps> = ({
   onDevolver,
 }) => {
   const hoyStr = new Date().toISOString().split('T')[0];
+  const [devolviendoId, setDevolviendoId] = useState<number | null>(null);
 
   // Solo préstamos que no hayan sido devueltos
   const prestamosActivos = prestamos.filter((p) => !p.devuelto);
@@ -21,6 +22,15 @@ export const TablaPrestamos: React.FC<TablaPrestamosProps> = ({
   const obtenerNombreEquipo = (equipoId: number) => {
     const eq = equipos.find((e) => e.id === equipoId);
     return eq ? eq.nombre : `Equipo #${equipoId}`;
+  };
+
+  const handleDevolver = async (prestamoId: number, equipoId: number) => {
+    try {
+      setDevolviendoId(prestamoId);
+      await onDevolver(prestamoId, equipoId);
+    } finally {
+      setDevolviendoId(null);
+    }
   };
 
   if (prestamosActivos.length === 0) {
@@ -47,6 +57,7 @@ export const TablaPrestamos: React.FC<TablaPrestamosProps> = ({
         <tbody className="divide-y divide-gray-100">
           {prestamosActivos.map((prestamo) => {
             const estaVencido = prestamo.fechaLimite < hoyStr;
+            const estaProcesando = devolviendoId === prestamo.id;
 
             return (
               <tr
@@ -79,10 +90,11 @@ export const TablaPrestamos: React.FC<TablaPrestamosProps> = ({
                 <td className="py-3 px-4 text-right">
                   <button
                     type="button"
-                    onClick={() => onDevolver(prestamo.id, prestamo.equipoId)}
-                    className="bg-gray-700 hover:bg-gray-900 text-white text-xs px-3 py-1.5 rounded font-medium cursor-pointer transition-colors"
+                    onClick={() => handleDevolver(prestamo.id, prestamo.equipoId)}
+                    disabled={estaProcesando}
+                    className="bg-gray-700 hover:bg-gray-900 disabled:bg-gray-400 text-white text-xs px-3 py-1.5 rounded font-medium cursor-pointer disabled:cursor-not-allowed transition-colors"
                   >
-                    Devolver
+                    {estaProcesando ? 'Devolviendo...' : 'Devolver'}
                   </button>
                 </td>
               </tr>

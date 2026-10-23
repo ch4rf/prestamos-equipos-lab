@@ -4,7 +4,7 @@ import type { Prestamo } from '../../types/prestamo';
 
 export interface FormularioPrestamoProps {
   equipo: Equipo;
-  onGuardar: (nuevoPrestamo: Omit<Prestamo, 'id'>) => void;
+  onGuardar: (nuevoPrestamo: Omit<Prestamo, 'id'>) => Promise<void>;
   onCerrar: () => void;
 }
 
@@ -12,6 +12,7 @@ interface ErroresFormulario {
   solicitante?: string;
   carne?: string;
   fechaLimite?: string;
+  general?: string;
 }
 
 export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
@@ -24,6 +25,7 @@ export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
   const [carne, setCarne] = useState('');
   const [fechaLimite, setFechaLimite] = useState('');
   const [errores, setErrores] = useState<ErroresFormulario>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Cálculo de fechas permitidas (Variante 7: Máximo 5 días de préstamo)
   const MAX_DIAS_PRESTAMO = 5;
@@ -65,18 +67,30 @@ export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validar()) return;
+    if (!validar() || isSubmitting) return;
 
-    onGuardar({
-      equipoId: equipo.id,
-      solicitante: solicitante.trim(),
-      carne: carne.trim(),
-      fechaPrestamo: hoyStr,
-      fechaLimite,
-      devuelto: false,
-    });
+    try {
+      setIsSubmitting(true);
+      await onGuardar({
+        equipoId: equipo.id,
+        solicitante: solicitante.trim(),
+        carne: carne.trim(),
+        fechaPrestamo: hoyStr,
+        fechaLimite,
+        devuelto: false,
+      });
+    } catch (err) {
+      setErrores((prev) => ({
+        ...prev,
+        general:
+          err instanceof Error
+            ? err.message
+            : 'Error al registrar el préstamo en la API.',
+      }));
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -95,11 +109,18 @@ export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
           <button
             type="button"
             onClick={onCerrar}
-            className="text-gray-400 hover:text-gray-600 text-lg leading-none cursor-pointer"
+            disabled={isSubmitting}
+            className="text-gray-400 hover:text-gray-600 text-lg leading-none cursor-pointer disabled:opacity-50"
           >
             ×
           </button>
         </div>
+
+        {errores.general && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-xs p-2.5 rounded">
+            {errores.general}
+          </div>
+        )}
 
         {/* Formulario controlado */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,6 +131,7 @@ export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
             </label>
             <input
               type="text"
+              disabled={isSubmitting}
               value={solicitante}
               onChange={(e) => setSolicitante(e.target.value)}
               placeholder="Ej. Juan Pérez"
@@ -133,6 +155,7 @@ export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
             </label>
             <input
               type="text"
+              disabled={isSubmitting}
               value={carne}
               onChange={(e) => setCarne(e.target.value)}
               placeholder="0902-23-6637"
@@ -156,6 +179,7 @@ export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
             </label>
             <input
               type="date"
+              disabled={isSubmitting}
               value={fechaLimite}
               onChange={(e) => setFechaLimite(e.target.value)}
               className={`w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -174,20 +198,22 @@ export const FormularioPrestamo: React.FC<FormularioPrestamoProps> = ({
             </p>
           </div>
 
-          {/* Botones de acción */}
+          {/* Botones de acción (el botón de envío se deshabilita mientras se procesa para evitar dobles registros) */}
           <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
             <button
               type="button"
               onClick={onCerrar}
-              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded font-medium cursor-pointer"
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded font-medium cursor-pointer disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded font-medium cursor-pointer"
+              disabled={isSubmitting}
+              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded font-medium cursor-pointer disabled:bg-blue-300 disabled:cursor-not-allowed"
             >
-              Guardar Préstamo
+              {isSubmitting ? 'Guardando préstamo...' : 'Guardar Préstamo'}
             </button>
           </div>
         </form>
